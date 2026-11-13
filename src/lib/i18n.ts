@@ -25,7 +25,6 @@ const ml = {
   "footer.headOffice": "ഹെഡ് ഓഫീസ്",
   "footer.contact": "ബന്ധപ്പെടുക",
   "footer.about": "തൊഴിലാളികളുടെ ഉന്നമനത്തിനും കൈത്തൊഴിൽ വ്യവസായത്തിന്റെ വളർച്ചയ്ക്കുമായി പ്രവർത്തിക്കുന്ന സഹകരണ സംഘം.",
-  "footer.website": "സംഘത്തിന്റെ വെബ്സൈറ്റ്",
   "footer.rights": "എല്ലാ അവകാശങ്ങളും സംരക്ഷിതം.",
 
   // Auth
@@ -416,7 +415,6 @@ const en: Record<Key, string> = {
   "footer.headOffice": "Head office",
   "footer.contact": "Contact",
   "footer.about": "A co-operative working for the uplift of handicraft workers and the growth of the craft industry.",
-  "footer.website": "Society website",
   "footer.rights": "All rights reserved.",
 
   "auth.loginTitle": "Log in",

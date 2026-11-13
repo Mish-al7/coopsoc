@@ -57,7 +57,6 @@ export async function SiteHeader() {
 
 export async function SiteFooter() {
   const { t } = await getT();
-  const site = SOCIETY.website.replace(/^https?:\/\//, "");
   return (
     <footer className="no-print bg-flame relative mt-16 overflow-hidden text-white">
       {/* soft blobs, like the banner on the society site */}
@@ -93,11 +92,6 @@ export async function SiteFooter() {
                 </a>
               </li>
             ))}
-            <li>
-              <a href={SOCIETY.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                🌐 {t("footer.website")} ({site})
-              </a>
-            </li>
           </ul>
         </div>
       </div>

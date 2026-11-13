@@ -3,7 +3,6 @@
 export const SOCIETY = {
   regNo: "C.IND (R) 193",
   phones: ["80862 39595"],
-  website: "https://www.thwicscjm.com",
   appNoPrefix: "THC",
 };
 
