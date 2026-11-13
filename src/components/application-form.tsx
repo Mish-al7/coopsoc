@@ -3,9 +3,9 @@
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { submitApplication } from "@/app/actions/application";
 import { cleanAadhaar, formatAadhaar, isValidAadhaar } from "@/lib/aadhaar";
-import { NOMINEE_RELATIONS, TALUKS } from "@/lib/i18n";
+import { NOMINEE_RELATIONS } from "@/lib/i18n";
 import { GUARDIAN_RELATIONS } from "@/lib/society";
-import { applicationSchema, fieldErrors, FILE_SLOTS, formText, MAX_EXTRA, type FileSlot } from "@/lib/validation";
+import { allErrors, applicationSchema, FILE_SLOTS, formText, IFSC_RE, MAX_EXTRA, type FileSlot } from "@/lib/validation";
 import { ExtraPhotos, ImagePicker } from "./image-picker";
 import { useT } from "./lang";
 import { PaymentBox, type PaymentInfo } from "./payment-box";
@@ -32,6 +32,27 @@ function keep(re: RegExp, max: number) {
 const ageOnly = keep(/\D/g, 3);
 const sharesOnly = keep(/\D/g, 4);
 const phoneOnly = keep(/[^\d+]|(?!^)\+/g, 13); // digits, and "+" only at the start (+91…)
+const accountOnly = keep(/\D/g, 18);
+function ifscOnly(e: React.FormEvent<HTMLInputElement>) {
+  const el = e.currentTarget;
+  const v = el.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11);
+  if (v !== el.value) el.value = v;
+}
+
+type IfscInfo = { code: string; found: boolean; bank?: string; branch?: string };
+
+/** Public IFSC directory (Razorpay). Only the IFSC code is sent. Returns null when the lookup can't be done. */
+async function fetchIfsc(code: string): Promise<IfscInfo | null> {
+  try {
+    const res = await fetch(`https://ifsc.razorpay.com/${encodeURIComponent(code)}`);
+    if (res.status === 404) return { code, found: false };
+    if (!res.ok) return null;
+    const j = (await res.json()) as { BANK?: string; BRANCH?: string };
+    return { code, found: true, bank: j.BANK ?? "", branch: j.BRANCH ?? "" };
+  } catch {
+    return null; // offline / blocked: the format check still applies
+  }
+}
 
 function Section({ n, title, sub, children }: { n: number; title: string; sub?: string; children: React.ReactNode }) {
   return (
@@ -125,6 +146,28 @@ export function ApplicationForm({
   const [address, setAddress] = useState(defaults.values.address ?? "");
   const [nomineeAddress, setNomineeAddress] = useState(defaults.values.nomineeAddress ?? "");
   const [sameAddress, setSameAddress] = useState(false);
+  const [bankName, setBankName] = useState(defaults.values.bankName ?? "");
+  const [bankBranch, setBankBranch] = useState(defaults.values.bankBranch ?? "");
+  const [ifscInfo, setIfscInfo] = useState<IfscInfo | null>(null);
+
+  // Check the IFSC against the public directory and fill bank + branch if they are still empty.
+  async function lookupIfsc(raw: string) {
+    const code = raw.trim().toUpperCase();
+    if (!IFSC_RE.test(code)) return setIfscInfo(null);
+    if (ifscInfo?.code === code) return;
+    const info = await fetchIfsc(code);
+    setIfscInfo(info);
+    if (info?.found) {
+      if (!bankName.trim() && info.bank) {
+        setBankName(info.bank);
+        clear("bankName");
+      }
+      if (!bankBranch.trim() && info.branch) {
+        setBankBranch(info.branch);
+        clear("bankBranch");
+      }
+    }
+  }
   const [scrollTick, setScrollTick] = useState(0);
   const [uploadTooBig, setUploadTooBig] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -144,8 +187,9 @@ export function ApplicationForm({
     const fd = new FormData(e.currentTarget);
     if (sameAddress) fd.set("nomineeAddress", address);
 
-    const parsed = applicationSchema.safeParse(formText(fd));
-    const ce = parsed.success ? {} : fieldErrors(parsed.error);
+    const raw = formText(fd);
+    const parsed = applicationSchema.safeParse(raw);
+    const ce = allErrors(raw, parsed.success ? undefined : parsed.error);
     for (const slot of FILE_SLOTS) if (!files[slot] && !defaults.files[slot]) ce[slot] = "v.photoRequired";
     if (payment && !files.payment && !defaults.files.payment) ce.payment = "v.paymentRequired";
     if (!PAYMENT_REF_RE.test(String(fd.get("paymentRef") ?? "").trim())) ce.paymentRef = "v.paymentRef";
@@ -289,17 +333,77 @@ export function ApplicationForm({
             <input id="village" name="village" defaultValue={v.village} className="input" aria-invalid={inv("village")} />
           </Field>
           <Field name="taluk" label={t("f.taluk")} error={err("taluk")}>
-            <input id="taluk" name="taluk" list="taluks" defaultValue={v.taluk} className="input" aria-invalid={inv("taluk")} />
-            <datalist id="taluks">
-              {TALUKS[lang].map((x) => (
-                <option key={x} value={x} />
-              ))}
-            </datalist>
+            <input id="taluk" name="taluk" defaultValue={v.taluk} className="input" aria-invalid={inv("taluk")} />
           </Field>
         </div>
       </Section>
 
-      <Section n={n(3)} title={t("sec.nominee")} sub={t("sec.nomineeSub")}>
+      <Section n={n(3)} title={t("sec.bank")} sub={t("sec.bankSub")}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field name="bankHolder" label={t("f.bankHolder")} error={err("bankHolder")} className="sm:col-span-2">
+            <input id="bankHolder" name="bankHolder" defaultValue={v.bankHolder} autoComplete="off" className="input" aria-invalid={inv("bankHolder")} />
+          </Field>
+          <Field name="bankAccount" label={t("f.bankAccount")} error={err("bankAccount")}>
+            <input
+              id="bankAccount"
+              name="bankAccount"
+              defaultValue={v.bankAccount}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="off"
+              onInput={accountOnly}
+              className="input font-semibold tracking-wider"
+              aria-invalid={inv("bankAccount")}
+            />
+          </Field>
+          <Field name="bankAccount2" label={t("f.bankAccount2")} error={err("bankAccount2")}>
+            <input
+              id="bankAccount2"
+              name="bankAccount2"
+              defaultValue={v.bankAccount}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="off"
+              onInput={accountOnly}
+              onPaste={(e) => e.preventDefault()}
+              className="input font-semibold tracking-wider"
+              aria-invalid={inv("bankAccount2")}
+            />
+            {!err("bankAccount2") && <p className="hint">{t("f.bankAccount2Hint")}</p>}
+          </Field>
+          <Field name="bankIfsc" label={t("f.ifsc")} error={err("bankIfsc")}>
+            <input
+              id="bankIfsc"
+              name="bankIfsc"
+              defaultValue={v.bankIfsc}
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              placeholder="SBIN0001234"
+              onInput={ifscOnly}
+              onBlur={(e) => lookupIfsc(e.currentTarget.value)}
+              className="input font-semibold uppercase tracking-wider"
+              aria-invalid={inv("bankIfsc")}
+            />
+            {!err("bankIfsc") &&
+              (ifscInfo?.found ? (
+                <p className="mt-1 text-sm font-semibold text-leaf">{t("f.ifscFound", { bank: ifscInfo.bank ?? "", branch: ifscInfo.branch ?? "" })}</p>
+              ) : ifscInfo?.found === false ? (
+                <p className="mt-1 text-sm text-[#7a5310]">{t("v.ifscUnknown")}</p>
+              ) : (
+                <p className="hint">{t("f.ifscHint")}</p>
+              ))}
+          </Field>
+          <Field name="bankName" label={t("f.bankName")} error={err("bankName")}>
+            <input id="bankName" name="bankName" value={bankName} onChange={(e) => setBankName(e.target.value)} className="input" aria-invalid={inv("bankName")} />
+          </Field>
+          <Field name="bankBranch" label={t("f.bankBranch")} error={err("bankBranch")} className="sm:col-span-2">
+            <input id="bankBranch" name="bankBranch" value={bankBranch} onChange={(e) => setBankBranch(e.target.value)} className="input" aria-invalid={inv("bankBranch")} />
+          </Field>
+        </div>
+      </Section>
+
+      <Section n={n(4)} title={t("sec.nominee")} sub={t("sec.nomineeSub")}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field name="nomineeName" label={t("f.nomineeName")} error={err("nomineeName")}>
             <input id="nomineeName" name="nomineeName" defaultValue={v.nomineeName} className="input" aria-invalid={inv("nomineeName")} />
@@ -349,13 +453,13 @@ export function ApplicationForm({
         </div>
       </Section>
 
-      <Section n={n(4)} title={t("sec.shares")}>
+      <Section n={n(5)} title={t("sec.shares")}>
         <Field name="shares" label={t("f.shares")} error={err("shares")} className="max-w-xs">
           <input id="shares" name="shares" defaultValue={v.shares || "1"} inputMode="numeric" pattern="[0-9]*" onInput={sharesOnly} className="input" aria-invalid={inv("shares")} />
         </Field>
       </Section>
 
-      <Section n={n(5)} title={t("sec.docs")}>
+      <Section n={n(6)} title={t("sec.docs")}>
         <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
           <ImagePicker id="photo" label={t("f.photo")} shape="portrait" file={files.photo ?? null} existingUrl={defaults.files.photo} onChange={setFile("photo")} error={err("photo")} />
           <ImagePicker id="signature" label={t("f.signature")} shape="portrait" hint={t("f.signatureHint")} file={files.signature ?? null} existingUrl={defaults.files.signature} onChange={setFile("signature")} error={err("signature")} />

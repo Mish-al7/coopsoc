@@ -149,6 +149,27 @@ export default async function AdminApplicationPage({ params }: { params: Promise
           </section>
 
           <section className="card p-4 sm:p-6">
+            <h2 className="mb-4 text-lg font-bold">{t("sec.bank")}</h2>
+            {app.bank?.accountEnc ? (
+              <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                <Item label={t("f.bankHolder")} wide>
+                  {app.bank.holderName}
+                </Item>
+                <Item label={t("f.bankAccount")}>
+                  <span className="tracking-[0.08em]">{decrypt(app.bank.accountEnc)}</span>
+                </Item>
+                <Item label={t("f.ifsc")}>
+                  <span className="tracking-[0.08em]">{app.bank.ifsc}</span>
+                </Item>
+                <Item label={t("f.bankName")}>{app.bank.bankName}</Item>
+                <Item label={t("f.bankBranch")}>{app.bank.branch}</Item>
+              </dl>
+            ) : (
+              <p className="text-muted">—</p>
+            )}
+          </section>
+
+          <section className="card p-4 sm:p-6">
             <h2 className="mb-4 text-lg font-bold">{t("sec.nominee")}</h2>
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
               <Item label={t("f.nomineeName")}>{app.nominee?.name}</Item>

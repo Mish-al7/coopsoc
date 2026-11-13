@@ -7,7 +7,7 @@ import { Application, nextSeq, type StoredFile } from "@/lib/models";
 import { requireUser } from "@/lib/session";
 import { decrypt, encrypt, hashAadhaar } from "@/lib/crypto";
 import { deleteImage, isRealImage, saveImage } from "@/lib/storage";
-import { applicationSchema, fieldErrors, FILE_SLOTS, formText, MAX_EXTRA, type FileSlot } from "@/lib/validation";
+import { allErrors, applicationSchema, FILE_SLOTS, formText, MAX_EXTRA, type FileSlot } from "@/lib/validation";
 import { SOCIETY } from "@/lib/society";
 import { getSettings } from "@/lib/settings";
 
@@ -27,8 +27,9 @@ export async function submitApplication(_: FormState, fd: FormData): Promise<For
     return { error: "err.locked" };
   }
 
-  const parsed = applicationSchema.safeParse(formText(fd));
-  const errors: Record<string, string> = parsed.success ? {} : fieldErrors(parsed.error);
+  const raw = formText(fd);
+  const parsed = applicationSchema.safeParse(raw);
+  const errors: Record<string, string> = allErrors(raw, parsed.success ? undefined : parsed.error);
 
   // Images
   const incoming: Partial<Record<FileSlot, File>> = {};
@@ -133,6 +134,14 @@ export async function submitApplication(_: FormState, fd: FormData): Promise<For
       aadhaarEnc: encrypt(d.aadhaar),
       aadhaarHash,
       aadhaarLast4: d.aadhaar.slice(-4),
+      bank: {
+        holderName: d.bankHolder,
+        accountEnc: encrypt(d.bankAccount),
+        accountLast4: d.bankAccount.slice(-4),
+        ifsc: d.bankIfsc,
+        bankName: d.bankName,
+        branch: d.bankBranch,
+      },
       nominee: {
         name: d.nomineeName,
         relation: d.nomineeRelation,

@@ -42,6 +42,16 @@ const applicationSchema = new Schema(
     aadhaarHash: { type: String, unique: true, sparse: true },
     aadhaarLast4: String,
 
+    // Applicant's bank account. The account number is encrypted like Aadhaar; only the last 4 are plain.
+    bank: {
+      holderName: { type: String, trim: true },
+      accountEnc: String,
+      accountLast4: String,
+      ifsc: { type: String, trim: true, uppercase: true },
+      bankName: { type: String, trim: true },
+      branch: { type: String, trim: true },
+    },
+
     nominee: {
       name: { type: String, trim: true },
       relation: { type: String, trim: true },

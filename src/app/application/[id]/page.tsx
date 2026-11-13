@@ -94,6 +94,19 @@ export default async function ApplicationView({ params }: { params: Promise<{ id
           <Row label={t("f.aadhaar")} value={formatAadhaar(decrypt(app.aadhaarEnc))} />
         </dl>
 
+        {app.bank?.accountEnc && (
+          <>
+            <p className="mt-5 font-semibold">{t("sec.bank")}</p>
+            <dl>
+              <Row label={t("f.bankHolder")} value={app.bank.holderName} />
+              <Row label={t("f.bankAccount")} value={decrypt(app.bank.accountEnc)} />
+              <Row label={t("f.ifsc")} value={app.bank.ifsc} />
+              <Row label={t("f.bankName")} value={app.bank.bankName} />
+              <Row label={t("f.bankBranch")} value={app.bank.branch} />
+            </dl>
+          </>
+        )}
+
         <p className="mt-5 font-semibold">{t("view.nomineeHeading")}</p>
         <dl>
           <Row label={t("f.nomineeName")} value={app.nominee?.name} />

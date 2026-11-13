@@ -19,7 +19,7 @@ export default async function Home() {
   const cta = user ? (user.role === "admin" ? "/admin" : "/dashboard") : "/register";
   const needs = [
     ...(settings && settings.feeAmount > 0 ? [t("home.needFee", { amount: formatRupees(settings.feeAmount) })] : []),
-    ...["home.need1", "home.need2", "home.need3", "home.need4"].map((k) => t(k)),
+    ...["home.need1", "home.need2", "home.need3", "home.need5", "home.need4"].map((k) => t(k)),
   ];
   const steps = [1, 2, 3].map((i) => ({ t: t(`home.step${i}t`), d: t(`home.step${i}d`) }));
 
