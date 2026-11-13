@@ -94,11 +94,6 @@ export async function SiteFooter() {
               </li>
             ))}
             <li>
-              <a href={`mailto:${SOCIETY.email}`} className="break-all hover:underline">
-                ✉️ {SOCIETY.email}
-              </a>
-            </li>
-            <li>
               <a href={SOCIETY.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
                 🌐 {t("footer.website")} ({site})
               </a>

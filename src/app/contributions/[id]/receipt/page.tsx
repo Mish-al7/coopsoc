@@ -78,7 +78,6 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <p className="text-lg font-extrabold leading-snug text-maroon">{t("society.name")}</p>
           <div className="text-sm leading-relaxed text-muted print:text-ink">
             <p>{t("society.address")}</p>
-            <p>{SOCIETY.email}</p>
             <p>{SOCIETY.phones.join(", ")}</p>
             <p className="mt-1 font-bold text-ink">
               {t("society.regNo")} {SOCIETY.regNo}

@@ -2,9 +2,8 @@
 // Names and address in both languages are in i18n.ts ("society.*" keys).
 export const SOCIETY = {
   regNo: "C.IND (R) 193",
-  phones: ["8281921997", "0487 2423894"],
-  email: "info@thwics.com",
-  website: "https://thwics.com",
+  phones: ["80862 39595"],
+  website: "https://www.thwicscjm.com",
   appNoPrefix: "THC",
 };
 
