@@ -7,6 +7,7 @@ import { useT } from "./lang";
 
 export type SettingsDefaults = {
   feeAmount: string;
+  contributionMin: string;
   upiId: string;
   payeeName: string;
   bankDetails: string;
@@ -58,6 +59,30 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
           />
         </div>
         {err("feeAmount") ? <p className="field-error">{err("feeAmount")}</p> : <p className="hint">{t("set.feeHint")}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="contributionMin" className="label">
+          {t("set.contributionMin")}
+        </label>
+        <div className="relative max-w-xs">
+          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center font-bold text-muted">₹</span>
+          <input
+            id="contributionMin"
+            name="contributionMin"
+            defaultValue={defaults.contributionMin}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            onInput={(e) => {
+              const el = e.currentTarget;
+              const v = el.value.replace(/\D/g, "").slice(0, 8);
+              if (v !== el.value) el.value = v;
+            }}
+            className="input pl-8 text-lg font-bold"
+            aria-invalid={err("contributionMin") ? true : undefined}
+          />
+        </div>
+        {err("contributionMin") ? <p className="field-error">{err("contributionMin")}</p> : <p className="hint">{t("set.contributionMinHint")}</p>}
       </div>
 
       <div className="max-w-xs">

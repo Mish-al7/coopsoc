@@ -16,6 +16,8 @@ export async function saveSettings(_: SettingsState, fd: FormData): Promise<Sett
 
   const feeRaw = String(fd.get("feeAmount") ?? "").trim();
   const feeAmount = feeRaw === "" ? 0 : Number(feeRaw);
+  const minRaw = String(fd.get("contributionMin") ?? "").trim();
+  const contributionMin = minRaw === "" ? 0 : Number(minRaw);
   const upiId = String(fd.get("upiId") ?? "").trim();
   const payeeName = String(fd.get("payeeName") ?? "").trim().slice(0, 100);
   const bankDetails = String(fd.get("bankDetails") ?? "").trim().slice(0, 500);
@@ -25,6 +27,7 @@ export async function saveSettings(_: SettingsState, fd: FormData): Promise<Sett
 
   const errors: Record<string, string> = {};
   if (!Number.isInteger(feeAmount) || feeAmount < 0 || feeAmount > 100000) errors.feeAmount = "v.fee";
+  if (!Number.isInteger(contributionMin) || contributionMin < 0 || contributionMin > 10000000) errors.contributionMin = "v.amount";
   if (upiId && !UPI_RE.test(upiId)) errors.upiId = "v.upiId";
   if (newQr && !newQr.type.startsWith("image/")) errors.qr = "v.imageOnly";
 
@@ -42,7 +45,7 @@ export async function saveSettings(_: SettingsState, fd: FormData): Promise<Sett
 
     await Settings.findOneAndUpdate(
       { _id: "main" },
-      { $set: { feeAmount, upiId, payeeName, bankDetails, qr, updatedBy: admin.id } },
+      { $set: { feeAmount, contributionMin, upiId, payeeName, bankDetails, qr, updatedBy: admin.id } },
       { upsert: true },
     );
     if (old && (saved || removeQr)) await deleteImage(old);
@@ -55,6 +58,7 @@ export async function saveSettings(_: SettingsState, fd: FormData): Promise<Sett
 
   revalidatePath("/admin/settings");
   revalidatePath("/apply");
+  revalidatePath("/contributions");
   revalidatePath("/");
   return { ok: "set.saved" };
 }

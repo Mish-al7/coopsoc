@@ -4,7 +4,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { connectDB } from "@/lib/db";
 import { fileUrl } from "@/lib/files";
 import { getT } from "@/lib/i18n-server";
-import { Application } from "@/lib/models";
+import { Application, Contribution } from "@/lib/models";
 import { requireAdmin } from "@/lib/session";
 import { STATUSES, type Status } from "@/lib/society";
 
@@ -38,6 +38,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     Application.aggregate<{ _id: Status; n: number }>([{ $group: { _id: "$status", n: { $sum: 1 } } }]),
   ]);
   const count = Object.fromEntries(counts.map((c) => [c._id, c.n])) as Record<Status, number>;
+  const pendingContributions = await Contribution.countDocuments({ status: "pending" });
   const total = counts.reduce((a, c) => a + c.n, 0);
 
   const tabHref = (s?: string) => {
@@ -52,27 +53,27 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   return (
     <div className="container-x py-6 sm:py-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold sm:text-3xl">{t("admin.title")}</h1>
-            <p className="text-muted">{t("admin.total", { n: total })}</p>
-          </div>
-          {admin.superAdmin && (
-            <Link href="/admin/settings" className="btn btn-ghost btn-sm shrink-0 sm:hidden">
-              ⚙ {t("nav.settings")}
-            </Link>
-          )}
+        <div>
+          <h1 className="text-2xl font-bold sm:text-3xl">{t("admin.title")}</h1>
+          <p className="text-muted">{t("admin.total", { n: total })}</p>
         </div>
         <form className="flex w-full gap-2 sm:w-auto" action="/admin">
           {status && <input type="hidden" name="status" value={status} />}
           <input name="q" defaultValue={q} placeholder={t("admin.searchPh")} className="input min-w-0 flex-1 sm:w-72" type="search" />
           <button className="btn btn-ghost shrink-0">{t("admin.search")}</button>
-          {admin.superAdmin && (
-            <Link href="/admin/settings" className="btn btn-ghost hidden shrink-0 sm:inline-flex">
-              ⚙ {t("nav.settings")}
-            </Link>
-          )}
         </form>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href="/admin/contributions" className="btn btn-ghost btn-sm">
+          ₹ {t("admin.contributions")}
+          {pendingContributions > 0 && <span className="chip bg-brand text-white">{pendingContributions}</span>}
+        </Link>
+        {admin.superAdmin && (
+          <Link href="/admin/settings" className="btn btn-ghost btn-sm">
+            ⚙ {t("nav.settings")}
+          </Link>
+        )}
       </div>
 
       <nav className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">

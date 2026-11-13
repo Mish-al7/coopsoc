@@ -15,6 +15,7 @@ const fileSchema = new Schema(
   {
     provider: { type: String, enum: ["cloudinary", "local"], required: true },
     key: { type: String, required: true },
+    mime: String, // "application/pdf" for PDFs; images are always re-encoded to JPEG (field absent)
     bytes: Number,
     width: Number,
     height: Number,
@@ -101,6 +102,7 @@ const settingsSchema = new Schema(
   {
     _id: { type: String, default: "main" },
     feeAmount: { type: Number, default: 0 }, // membership fee in rupees; 0 = no payment step
+    contributionMin: { type: Number, default: 0 }, // smallest project contribution members may send
     upiId: { type: String, trim: true },
     payeeName: { type: String, trim: true },
     bankDetails: { type: String, trim: true },
@@ -125,7 +127,36 @@ export const Application =
 const Counter =
   (models.Counter as Model<{ _id: string; seq: number }>) || model("Counter", counterSchema);
 
-export type SettingsDoc = InferSchemaType<typeof settingsSchema> & { _id: string; updatedAt?: Date };
+// A member's "project contribution" deposit: they pay at the bank / by UPI, upload the slip,
+// the office checks it and approves (→ receipt number) or rejects it.
+export const CONTRIBUTION_STATUSES = ["pending", "approved", "rejected"] as const;
+export type ContributionStatus = (typeof CONTRIBUTION_STATUSES)[number];
+
+const contributionSchema = new Schema(
+  {
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    application: { type: Schema.Types.ObjectId, ref: "Application", required: true },
+    amount: { type: Number, required: true },
+    ref: { type: String, trim: true }, // bank / UPI reference typed by the member (optional)
+    slip: { type: fileSchema, required: true }, // photo or PDF of the bank slip
+    status: { type: String, enum: CONTRIBUTION_STATUSES, default: "pending", index: true },
+    receiptNo: { type: String, unique: true, sparse: true },
+    officeNote: { type: String, trim: true },
+    reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    reviewedAt: Date,
+  },
+  { timestamps: true },
+);
+
+export type ContributionDoc = InferSchemaType<typeof contributionSchema> & {
+  _id: mongoose.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+};
+export const Contribution =
+  (models.Contribution as Model<ContributionDoc>) || model<ContributionDoc>("Contribution", contributionSchema);
+
+export type SettingsDoc =InferSchemaType<typeof settingsSchema> & { _id: string; updatedAt?: Date };
 export const Settings =
   (models.Settings as Model<SettingsDoc>) || model<SettingsDoc>("Settings", settingsSchema);
 

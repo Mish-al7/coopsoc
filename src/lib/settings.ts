@@ -3,6 +3,7 @@ import { Settings, type StoredFile } from "./models";
 
 export type PaymentSettings = {
   feeAmount: number;
+  contributionMin: number;
   upiId: string;
   payeeName: string;
   bankDetails: string;
@@ -16,6 +17,7 @@ export async function getSettings(): Promise<PaymentSettings> {
   const s = await Settings.findById("main").lean();
   return {
     feeAmount: s?.feeAmount ?? 0,
+    contributionMin: s?.contributionMin ?? 0,
     upiId: s?.upiId ?? "",
     payeeName: s?.payeeName ?? "",
     bankDetails: s?.bankDetails ?? "",

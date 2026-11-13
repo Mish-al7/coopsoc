@@ -34,6 +34,7 @@ export default async function SettingsPage() {
           <SettingsForm
             defaults={{
               feeAmount: String(s.feeAmount),
+              contributionMin: String(s.contributionMin),
               upiId: s.upiId,
               payeeName: s.payeeName,
               bankDetails: s.bankDetails,

@@ -82,6 +82,62 @@ export async function saveImage(file: File, folder: string): Promise<StoredFile>
   return { provider: "local", key, ...meta };
 }
 
+export const PDF_MIME = "application/pdf";
+const MAX_PDF_BYTES = 4 * 1024 * 1024; // Vercel accepts ~4.5 MB per request
+
+/** A bank slip / receipt: a photo (re-encoded like the others) or a PDF (stored as-is). */
+export async function saveDocument(file: File, folder: string): Promise<StoredFile> {
+  const isPdf = file.type === PDF_MIME || /\.pdf$/i.test(file.name);
+  if (!isPdf) return saveImage(file, folder);
+
+  if (file.size > MAX_PDF_BYTES) throw new Error("err.pdfTooBig");
+  const data = Buffer.from(await file.arrayBuffer());
+  if (data.subarray(0, 5).toString("latin1") !== "%PDF-") throw new Error("err.pdfUnreadable");
+
+  const cloudinary = await getCloudinary();
+  if (cloudinary) {
+    const res = await new Promise<{ public_id: string }>((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          { folder: `coopsoc/${folder}`, type: "authenticated", resource_type: "raw", filename_override: "slip.pdf", use_filename: false },
+          (err, r) => (err || !r ? reject(err ?? new Error("upload failed")) : resolve(r)),
+        )
+        .end(data);
+    });
+    return { provider: "cloudinary", key: res.public_id, mime: PDF_MIME, bytes: data.length };
+  }
+
+  if (!localStorageAllowed()) {
+    console.error("[storage] CLOUDINARY_* env vars are missing on this server");
+    throw new Error("err.saveFailed");
+  }
+  const key = `${folder}/${crypto.randomUUID()}.pdf`;
+  const full = path.join(LOCAL_ROOT, key);
+  await fs.mkdir(path.dirname(full), { recursive: true });
+  await fs.writeFile(full, data);
+  return { provider: "local", key, mime: PDF_MIME, bytes: data.length };
+}
+
+/** Reads any stored file (photo or PDF). */
+export async function readStored(f: StoredFile): Promise<Buffer> {
+  if (f.mime !== PDF_MIME) return readImage(f);
+  if (f.provider === "cloudinary") {
+    const cloudinary = await getCloudinary();
+    if (!cloudinary) throw new Error("Cloudinary is not configured");
+    const signed = cloudinary.url(f.key, { type: "authenticated", resource_type: "raw", sign_url: true, secure: true });
+    let res = await fetch(signed);
+    if (!res.ok) {
+      // Some plans restrict PDF delivery URLs; the API download link still works.
+      res = await fetch(cloudinary.utils.private_download_url(f.key, "", { resource_type: "raw", type: "authenticated" }));
+    }
+    if (!res.ok) throw new Error(`Cloudinary fetch failed: ${res.status}`);
+    return Buffer.from(await res.arrayBuffer());
+  }
+  const full = path.resolve(LOCAL_ROOT, f.key);
+  if (!full.startsWith(LOCAL_ROOT + path.sep)) throw new Error("bad path");
+  return fs.readFile(full);
+}
+
 export async function readImage(f: StoredFile): Promise<Buffer> {
   if (f.provider === "cloudinary") {
     const cloudinary = await getCloudinary();
@@ -107,7 +163,8 @@ export async function deleteImage(f: StoredFile | null | undefined) {
   try {
     if (f.provider === "cloudinary") {
       const cloudinary = await getCloudinary();
-      if (cloudinary) await cloudinary.uploader.destroy(f.key, { type: "authenticated", resource_type: "image" });
+      if (cloudinary)
+        await cloudinary.uploader.destroy(f.key, { type: "authenticated", resource_type: f.mime === PDF_MIME ? "raw" : "image" });
     } else {
       const full = path.resolve(LOCAL_ROOT, f.key);
       if (full.startsWith(LOCAL_ROOT + path.sep)) await fs.unlink(full);

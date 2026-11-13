@@ -119,6 +119,24 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </Link>
       </div>
 
+      {status === "approved" && (
+        <Link
+          href="/contributions"
+          className="card mt-6 flex items-center gap-4 p-4 transition hover:border-brand/50 hover:shadow-md sm:p-5"
+        >
+          <span className="icon-bubble shrink-0 text-xl font-extrabold" aria-hidden="true">
+            ₹
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-extrabold">{t("pc.title")}</span>
+            <span className="block text-sm text-muted">{t("pc.dashCard")}</span>
+          </span>
+          <span className="text-2xl text-muted" aria-hidden="true">
+            ›
+          </span>
+        </Link>
+      )}
+
       <p className="mt-8 text-sm text-muted">
         {t("dash.help")}{" "}
         {SOCIETY.phones.map((p, i) => (
