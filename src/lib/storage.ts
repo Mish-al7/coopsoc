@@ -1,5 +1,3 @@
-import { v2 as cloudinary } from "cloudinary";
-import sharp from "sharp";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -8,20 +6,31 @@ import type { StoredFile } from "./models";
 // Images go to Cloudinary when its keys are set; otherwise (local testing)
 // they are written to ./.data/uploads. Either way they are never public:
 // the app serves them through /api/files after checking who is asking.
+//
+// sharp and cloudinary are loaded only when an image is actually handled, so a
+// problem with either one can never stop a page (like /apply) from opening.
 
 const MAX_INPUT_BYTES = 15 * 1024 * 1024;
 const LOCAL_ROOT = path.join(process.cwd(), ".data", "uploads");
 
-function cloudinaryEnabled() {
+type Cloudinary = (typeof import("cloudinary"))["v2"];
+
+async function getCloudinary(): Promise<Cloudinary | null> {
   const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env;
-  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) return false;
+  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) return null;
+  const { v2: cloudinary } = await import("cloudinary");
   cloudinary.config({
     cloud_name: CLOUDINARY_CLOUD_NAME,
     api_key: CLOUDINARY_API_KEY,
     api_secret: CLOUDINARY_API_SECRET,
     secure: true,
   });
-  return true;
+  return cloudinary;
+}
+
+/** Hosted servers (Vercel) have a read-only disk, so local storage only works on a dev machine. */
+function localStorageAllowed() {
+  return !process.env.VERCEL;
 }
 
 export function isRealImage(f: FormDataEntryValue | null): f is File {
@@ -36,18 +45,21 @@ export async function saveImage(file: File, folder: string): Promise<StoredFile>
   // Re-encode: fixes rotation, strips EXIF/GPS, caps size, flattens transparent signatures.
   let out: { data: Buffer; info: { size: number; width: number; height: number } };
   try {
+    const { default: sharp } = await import("sharp");
     out = await sharp(input)
       .rotate()
       .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
       .flatten({ background: "#ffffff" })
       .jpeg({ quality: 82, mozjpeg: true })
       .toBuffer({ resolveWithObject: true });
-  } catch {
+  } catch (e) {
+    console.error("[storage] image processing failed", e);
     throw new Error("err.imageUnreadable");
   }
   const meta = { bytes: out.info.size, width: out.info.width, height: out.info.height };
 
-  if (cloudinaryEnabled()) {
+  const cloudinary = await getCloudinary();
+  if (cloudinary) {
     const res = await new Promise<{ public_id: string }>((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -59,6 +71,10 @@ export async function saveImage(file: File, folder: string): Promise<StoredFile>
     return { provider: "cloudinary", key: res.public_id, ...meta };
   }
 
+  if (!localStorageAllowed()) {
+    console.error("[storage] CLOUDINARY_* env vars are missing on this server");
+    throw new Error("err.saveFailed");
+  }
   const key = `${folder}/${crypto.randomUUID()}.jpg`;
   const full = path.join(LOCAL_ROOT, key);
   await fs.mkdir(path.dirname(full), { recursive: true });
@@ -68,7 +84,8 @@ export async function saveImage(file: File, folder: string): Promise<StoredFile>
 
 export async function readImage(f: StoredFile): Promise<Buffer> {
   if (f.provider === "cloudinary") {
-    cloudinaryEnabled();
+    const cloudinary = await getCloudinary();
+    if (!cloudinary) throw new Error("Cloudinary is not configured");
     const url = cloudinary.url(f.key, {
       type: "authenticated",
       sign_url: true,
@@ -89,8 +106,8 @@ export async function deleteImage(f: StoredFile | null | undefined) {
   if (!f) return;
   try {
     if (f.provider === "cloudinary") {
-      if (cloudinaryEnabled())
-        await cloudinary.uploader.destroy(f.key, { type: "authenticated", resource_type: "image" });
+      const cloudinary = await getCloudinary();
+      if (cloudinary) await cloudinary.uploader.destroy(f.key, { type: "authenticated", resource_type: "image" });
     } else {
       const full = path.resolve(LOCAL_ROOT, f.key);
       if (full.startsWith(LOCAL_ROOT + path.sep)) await fs.unlink(full);

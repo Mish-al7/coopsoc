@@ -40,7 +40,7 @@ export function ImagePicker({ id, label, hint, existingUrl, file, onChange, erro
       <label
         htmlFor={id}
         className={`group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed text-center transition ${
-          shape === "portrait" ? "aspect-[4/5]" : "aspect-[16/10]"
+          shape === "portrait" ? "aspect-[4/5]" : "aspect-[4/3] sm:aspect-[16/10]"
         } ${error ? "border-danger bg-danger-soft/40" : preview ? "border-sand-2 bg-paper" : "border-sand-2 bg-white hover:border-brand hover:bg-brand-soft/40"}`}
       >
         {preview ? (
@@ -50,11 +50,11 @@ export function ImagePicker({ id, label, hint, existingUrl, file, onChange, erro
             <span className="absolute bottom-2 right-2 rounded-full bg-ink/75 px-3 py-1 text-xs font-semibold text-white">{t("img.change")}</span>
           </>
         ) : (
-          <span className="flex flex-col items-center gap-1.5 px-2 text-muted">
-            <span className="rounded-full bg-brand-soft p-2.5 text-brand">
+          <span className="flex flex-col items-center gap-1 px-2 text-muted sm:gap-1.5">
+            <span className="rounded-full bg-brand-soft p-2 text-brand sm:p-2.5">
               <CameraIcon />
             </span>
-            <span className="text-sm font-semibold leading-snug text-ink">{t("img.pick")}</span>
+            <span className="text-xs font-semibold leading-snug text-ink sm:text-sm">{t("img.pick")}</span>
           </span>
         )}
         {busy && (

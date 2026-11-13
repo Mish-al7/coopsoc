@@ -85,6 +85,14 @@ export function fieldErrors(err: z.ZodError): Record<string, string> {
   return out;
 }
 
-export const FILE_SLOTS = ["photo", "signature", "aadhaarFront", "aadhaarBack"] as const;
+export const FILE_SLOTS = [
+  "photo",
+  "signature",
+  "aadhaarFront",
+  "aadhaarBack",
+  "nomineePhoto",
+  "nomineeAadhaarFront",
+  "nomineeAadhaarBack",
+] as const;
 export type FileSlot = (typeof FILE_SLOTS)[number];
 export const MAX_EXTRA = 3;

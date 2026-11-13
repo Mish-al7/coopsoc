@@ -70,6 +70,9 @@ export default async function ApplyPage() {
           signature: fileUrl(id, "signature", app.files?.signature),
           aadhaarFront: fileUrl(id, "aadhaarFront", app.files?.aadhaarFront),
           aadhaarBack: fileUrl(id, "aadhaarBack", app.files?.aadhaarBack),
+          nomineePhoto: fileUrl(id, "nomineePhoto", app.files?.nomineePhoto),
+          nomineeAadhaarFront: fileUrl(id, "nomineeAadhaarFront", app.files?.nomineeAadhaarFront),
+          nomineeAadhaarBack: fileUrl(id, "nomineeAadhaarBack", app.files?.nomineeAadhaarBack),
           extra: (app.files?.extra ?? []).map((f, i) => fileUrl(id, `extra-${i}`, f)!),
         },
       }

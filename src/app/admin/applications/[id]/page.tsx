@@ -162,6 +162,13 @@ export default async function AdminApplicationPage({ params }: { params: Promise
                 <span className="whitespace-pre-line">{app.nominee?.address}</span>
               </Item>
             </dl>
+            {(f?.nomineePhoto || f?.nomineeAadhaarFront || f?.nomineeAadhaarBack) && (
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <Doc href={fileUrl(id, "nomineePhoto", f?.nomineePhoto)} label={t("f.nomineePhoto")} />
+                <Doc href={fileUrl(id, "nomineeAadhaarFront", f?.nomineeAadhaarFront)} label={t("f.nomineeAadhaarFront")} />
+                <Doc href={fileUrl(id, "nomineeAadhaarBack", f?.nomineeAadhaarBack)} label={t("f.nomineeAadhaarBack")} />
+              </div>
+            )}
           </section>
         </div>
 

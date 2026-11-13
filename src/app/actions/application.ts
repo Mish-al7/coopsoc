@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { connectDB } from "@/lib/db";
 import { Application, nextSeq, type StoredFile } from "@/lib/models";
 import { requireUser } from "@/lib/session";
-import { encrypt, hashAadhaar } from "@/lib/crypto";
+import { decrypt, encrypt, hashAadhaar } from "@/lib/crypto";
 import { deleteImage, isRealImage, saveImage } from "@/lib/storage";
 import { applicationSchema, fieldErrors, FILE_SLOTS, formText, MAX_EXTRA, type FileSlot } from "@/lib/validation";
 import { SOCIETY } from "@/lib/society";
@@ -94,6 +94,9 @@ export async function submitApplication(_: FormState, fd: FormData): Promise<For
       signature: existing?.files?.signature,
       aadhaarFront: existing?.files?.aadhaarFront,
       aadhaarBack: existing?.files?.aadhaarBack,
+      nomineePhoto: existing?.files?.nomineePhoto,
+      nomineeAadhaarFront: existing?.files?.nomineeAadhaarFront,
+      nomineeAadhaarBack: existing?.files?.nomineeAadhaarBack,
       payment: existing?.files?.payment,
       extra: [...keptExtras, ...extraUploads],
     } as Record<FileSlot | "payment", StoredFile | undefined> & { extra: StoredFile[] };
@@ -147,8 +150,14 @@ export async function submitApplication(_: FormState, fd: FormData): Promise<For
     };
 
     if (existing) {
-      // The person changed their Aadhaar → the office must check it again.
-      const aadhaarChanged = existing.aadhaarHash !== aadhaarHash || !!incoming.aadhaarFront || !!incoming.aadhaarBack;
+      // The applicant's or the nominee's Aadhaar changed → the office must check it again.
+      const aadhaarChanged =
+        existing.aadhaarHash !== aadhaarHash ||
+        decrypt(existing.nominee?.aadhaarEnc) !== d.nomineeAadhaar ||
+        !!incoming.aadhaarFront ||
+        !!incoming.aadhaarBack ||
+        !!incoming.nomineeAadhaarFront ||
+        !!incoming.nomineeAadhaarBack;
       existing.set({ ...data, aadhaarVerified: aadhaarChanged ? false : existing.aadhaarVerified });
       await existing.save();
     } else {

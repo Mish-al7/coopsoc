@@ -17,6 +17,7 @@ export type ApplicationDefaults = {
 };
 
 const PAYMENT_REF_RE = /^[A-Za-z0-9 /-]{0,40}$/;
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 // Number fields: drop anything that isn't allowed as it is typed or pasted
 // (phone keyboards can still switch to letters, and desktop keyboards always can).
@@ -125,6 +126,7 @@ export function ApplicationForm({
   const [nomineeAddress, setNomineeAddress] = useState(defaults.values.nomineeAddress ?? "");
   const [sameAddress, setSameAddress] = useState(false);
   const [scrollTick, setScrollTick] = useState(0);
+  const [uploadTooBig, setUploadTooBig] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const rawErrors = { ...(state?.errors ?? {}), ...clientErrors };
@@ -153,6 +155,16 @@ export function ApplicationForm({
       setScrollTick((n) => n + 1);
       return;
     }
+
+    // The host accepts at most ~4.5 MB per request; photos are compressed, but a photo
+    // the browser couldn't shrink (some HEIC files) can still be several MB.
+    const uploadBytes = Object.values(files).reduce((s, f) => s + (f?.size ?? 0), 0) + addedExtra.reduce((s, f) => s + f.size, 0);
+    if (uploadBytes > MAX_UPLOAD_BYTES) {
+      setUploadTooBig(true);
+      setScrollTick((n) => n + 1);
+      return;
+    }
+    setUploadTooBig(false);
 
     for (const slot of FILE_SLOTS) if (files[slot]) fd.set(slot, files[slot]!);
     if (files.payment) fd.set("payment", files.payment);
@@ -184,9 +196,9 @@ export function ApplicationForm({
       className="space-y-5"
       onChange={(e) => clear((e.target as unknown as HTMLInputElement).name)}
     >
-      {(state?.error || hasErrors) && (
+      {(state?.error || hasErrors || uploadTooBig) && (
         <p id="form-alert" className="alert alert-error" role="alert">
-          {t(state?.error ?? "form.fixSummary")}
+          {uploadTooBig && !hasErrors ? t("v.uploadTooBig") : t(state?.error ?? "form.fixSummary")}
         </p>
       )}
 
@@ -325,6 +337,15 @@ export function ApplicationForm({
               aria-invalid={inv("nomineeAddress")}
             />
           </Field>
+        </div>
+
+        <div className="mt-6 border-t border-sand pt-4">
+          <p className="mb-3 font-bold">{t("f.nomineeDocs")}</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5">
+            <ImagePicker id="nomineePhoto" label={t("f.photo")} shape="portrait" file={files.nomineePhoto ?? null} existingUrl={defaults.files.nomineePhoto} onChange={setFile("nomineePhoto")} error={err("nomineePhoto")} />
+            <ImagePicker id="nomineeAadhaarFront" label={t("f.aadhaarFront")} file={files.nomineeAadhaarFront ?? null} existingUrl={defaults.files.nomineeAadhaarFront} onChange={setFile("nomineeAadhaarFront")} error={err("nomineeAadhaarFront")} />
+            <ImagePicker id="nomineeAadhaarBack" label={t("f.aadhaarBack")} file={files.nomineeAadhaarBack ?? null} existingUrl={defaults.files.nomineeAadhaarBack} onChange={setFile("nomineeAadhaarBack")} error={err("nomineeAadhaarBack")} />
+          </div>
         </div>
       </Section>
 

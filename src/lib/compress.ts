@@ -1,5 +1,6 @@
-// Browser-side: shrink phone photos (often 4–8 MB) to ~200–400 KB before upload.
-export async function compressImage(file: File, max = 1600, quality = 0.85): Promise<File> {
+// Browser-side: shrink phone photos (often 4–8 MB) to ~150–300 KB before upload.
+// Kept small on purpose: Vercel caps one request at 4.5 MB and a form can carry 11 photos.
+export async function compressImage(file: File, max = 1280, quality = 0.8): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
   try {
     const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });

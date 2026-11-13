@@ -59,6 +59,9 @@ const applicationSchema = new Schema(
       signature: fileSchema,
       aadhaarFront: fileSchema,
       aadhaarBack: fileSchema,
+      nomineePhoto: fileSchema,
+      nomineeAadhaarFront: fileSchema,
+      nomineeAadhaarBack: fileSchema,
       payment: fileSchema, // screenshot of the membership-fee payment
       extra: { type: [fileSchema], default: [] },
     },
