@@ -1,0 +1,312 @@
+@import "tailwindcss";
+
+/* Palette follows the society's own site (thwics.com): orange → red gradient,
+   navy text, white + pale blue-grey sections, mint/coral divider, gold accents. */
+@theme inline {
+  --color-cream: #f7f9fc;
+  --color-paper: #ffffff;
+  --color-sand: #e6ebf1;
+  --color-sand-2: #d3dbe5;
+  --color-ink: #0e314c;
+  --color-muted: #5d6b7a;
+  --color-brand: #c94427;
+  --color-brand-dark: #a5321e;
+  --color-brand-soft: #fdebe5;
+  --color-flame: #eb6b3c;
+  --color-coral: #f1594e;
+  --color-maroon: #7b2525;
+  --color-mint: #cdf1d8;
+  --color-leaf: #2f6b57;
+  --color-leaf-soft: #dcf3e5;
+  --color-gold: #d6aa31;
+  --color-gold-soft: #fbf2d9;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdeceb;
+
+  /* Latin glyphs from Mulish (the site's Muli), Malayalam glyphs fall through to Anek Malayalam */
+  --font-sans: var(--font-mulish), var(--font-anek), system-ui, sans-serif;
+  --font-display: var(--font-mulish), var(--font-anek), system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+/* Malayalam glyphs need a little more air than Latin */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+@layer components {
+  .container-x {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .container-x {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  .card {
+    background: var(--color-paper);
+    border: 1px solid var(--color-sand);
+    border-radius: 1.25rem;
+    box-shadow:
+      0 1px 2px rgb(14 49 76 / 0.04),
+      0 14px 34px -20px rgb(14 49 76 / 0.22);
+  }
+
+  /* Brand gradient (orange → red), as in the society site's banner */
+  .bg-flame {
+    background-image: linear-gradient(120deg, #ef7d3e 0%, #e0552f 45%, #c7362c 100%);
+  }
+  .text-flame {
+    background-image: linear-gradient(100deg, #e0552f, #c7362c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Section title underline: mint bar with a coral dot (from thwics.com) */
+  .divider {
+    position: relative;
+    display: block;
+    width: 5.5rem;
+    height: 0.3rem;
+    border-radius: 999px;
+    background: var(--color-mint);
+    overflow: visible;
+  }
+  .divider::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 0.7rem;
+    height: 0.7rem;
+    margin-top: -0.35rem;
+    border-radius: 999px;
+    background: var(--color-coral);
+    animation: divider-dot 4s ease-in-out infinite alternate;
+  }
+  .divider-center {
+    margin-inline: auto;
+  }
+  @keyframes divider-dot {
+    to {
+      left: calc(100% - 0.7rem);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .divider::before {
+      animation: none;
+      left: calc(50% - 0.35rem);
+    }
+  }
+
+  .icon-bubble {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.75rem;
+    height: 3.75rem;
+    border-radius: 999px;
+    background: #fde4e1;
+    color: var(--color-brand);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.9rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    transition:
+      background-color 0.15s,
+      box-shadow 0.15s,
+      transform 0.05s,
+      border-color 0.15s;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .btn-sm {
+    min-height: 2.5rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 0.75rem;
+    font-size: 0.95rem;
+  }
+  .btn-primary {
+    background-color: var(--color-brand);
+    background-image: linear-gradient(120deg, #cf4a29, #b8352a);
+    color: #fff;
+    box-shadow: 0 8px 18px -10px rgb(199 54 44 / 0.75);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-image: linear-gradient(120deg, #b93f22, #9f2c22);
+  }
+  .btn-white {
+    background: #fff;
+    color: var(--color-brand-dark);
+    box-shadow: 0 10px 24px -14px rgb(0 0 0 / 0.45);
+  }
+  .btn-white:hover:not(:disabled) {
+    background: #fff7f3;
+  }
+  .btn-outline-white {
+    color: #fff;
+    border: 1.5px solid rgb(255 255 255 / 0.75);
+  }
+  .btn-outline-white:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.12);
+  }
+  .btn-ghost {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border: 1.5px solid var(--color-sand-2);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--color-brand);
+    color: var(--color-brand-dark);
+  }
+  .btn-leaf {
+    background: var(--color-leaf);
+    color: #fff;
+  }
+  .btn-leaf:hover:not(:disabled) {
+    background: #255546;
+  }
+
+  .label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.98rem;
+    margin-bottom: 0.35rem;
+    color: var(--color-ink);
+  }
+  .label .en {
+    font-weight: 400;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    margin-left: 0.35rem;
+  }
+
+  .input {
+    display: block;
+    width: 100%;
+    min-height: 3rem;
+    border-radius: 0.8rem;
+    border: 1.5px solid var(--color-sand-2);
+    background: #fff;
+    padding: 0.6rem 0.9rem;
+    font-size: 16px; /* stops iOS zoom on focus */
+    color: var(--color-ink);
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+  textarea.input {
+    min-height: 6rem;
+    resize: vertical;
+  }
+  .input::placeholder {
+    color: #9aa6b2;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 4px var(--color-brand-soft);
+  }
+  .input[aria-invalid="true"] {
+    border-color: var(--color-danger);
+    background: #fffafa;
+  }
+  select.input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%235d6b7a' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 8l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
+  }
+
+  .field-error {
+    color: var(--color-danger);
+    font-size: 0.86rem;
+    margin-top: 0.3rem;
+  }
+  .hint {
+    color: var(--color-muted);
+    font-size: 0.84rem;
+    margin-top: 0.3rem;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .alert {
+    border-radius: 0.9rem;
+    padding: 0.8rem 1rem;
+    font-size: 0.95rem;
+  }
+  .alert-error {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    border: 1px solid #f5c2bd;
+  }
+  .alert-ok {
+    background: var(--color-leaf-soft);
+    color: var(--color-leaf);
+    border: 1px solid #b9dccb;
+  }
+  .alert-warn {
+    background: var(--color-gold-soft);
+    color: #7a5310;
+    border: 1px solid #efd9a6;
+  }
+}
+
+@media print {
+  body {
+    background: #fff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
