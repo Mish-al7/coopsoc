@@ -47,6 +47,12 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
             name="feeAmount"
             defaultValue={defaults.feeAmount}
             inputMode="numeric"
+            pattern="[0-9]*"
+            onInput={(e) => {
+              const el = e.currentTarget;
+              const v = el.value.replace(/\D/g, "").slice(0, 6);
+              if (v !== el.value) el.value = v;
+            }}
             className="input pl-8 text-lg font-bold"
             aria-invalid={err("feeAmount") ? true : undefined}
           />

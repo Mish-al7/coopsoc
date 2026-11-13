@@ -18,6 +18,20 @@ export type ApplicationDefaults = {
 
 const PAYMENT_REF_RE = /^[A-Za-z0-9 /-]{0,40}$/;
 
+// Number fields: drop anything that isn't allowed as it is typed or pasted
+// (phone keyboards can still switch to letters, and desktop keyboards always can).
+// The length cap is applied after cleaning (not with maxLength), so pasting "+91 98470 12345" keeps every digit.
+function keep(re: RegExp, max: number) {
+  return (e: React.FormEvent<HTMLInputElement>) => {
+    const el = e.currentTarget;
+    const v = el.value.replace(re, "").slice(0, max);
+    if (v !== el.value) el.value = v;
+  };
+}
+const ageOnly = keep(/\D/g, 3);
+const sharesOnly = keep(/\D/g, 4);
+const phoneOnly = keep(/[^\d+]|(?!^)\+/g, 13); // digits, and "+" only at the start (+91…)
+
 function Section({ n, title, sub, children }: { n: number; title: string; sub?: string; children: React.ReactNode }) {
   return (
     <section className="card p-4 sm:p-6">
@@ -237,13 +251,13 @@ export function ApplicationForm({
           </Field>
 
           <Field name="age" label={t("f.age")} error={err("age")}>
-            <input id="age" name="age" defaultValue={v.age} inputMode="numeric" className="input" aria-invalid={inv("age")} />
+            <input id="age" name="age" defaultValue={v.age} inputMode="numeric" pattern="[0-9]*" onInput={ageOnly} className="input" aria-invalid={inv("age")} />
           </Field>
           <Field name="occupation" label={t("f.occupation")} error={err("occupation")}>
             <input id="occupation" name="occupation" defaultValue={v.occupation} className="input" placeholder={t("f.occupationPh")} aria-invalid={inv("occupation")} />
           </Field>
           <Field name="phone" label={t("f.phone")} error={err("phone")}>
-            <input id="phone" name="phone" type="tel" defaultValue={v.phone} inputMode="tel" autoComplete="tel" className="input" placeholder="98XXXXXXXX" aria-invalid={inv("phone")} />
+            <input id="phone" name="phone" type="tel" defaultValue={v.phone} inputMode="tel" autoComplete="tel" onInput={phoneOnly} className="input" placeholder="98XXXXXXXX" aria-invalid={inv("phone")} />
           </Field>
           <Field name="aadhaar" label={t("f.aadhaar")} error={err("aadhaar")}>
             <AadhaarInput name="aadhaar" defaultValue={v.aadhaar} invalid={inv("aadhaar")} />
@@ -287,10 +301,10 @@ export function ApplicationForm({
             </datalist>
           </Field>
           <Field name="nomineeAge" label={t("f.age")} error={err("nomineeAge")}>
-            <input id="nomineeAge" name="nomineeAge" defaultValue={v.nomineeAge} inputMode="numeric" className="input" aria-invalid={inv("nomineeAge")} />
+            <input id="nomineeAge" name="nomineeAge" defaultValue={v.nomineeAge} inputMode="numeric" pattern="[0-9]*" onInput={ageOnly} className="input" aria-invalid={inv("nomineeAge")} />
           </Field>
           <Field name="nomineePhone" label={t("f.phone")} error={err("nomineePhone")}>
-            <input id="nomineePhone" name="nomineePhone" type="tel" defaultValue={v.nomineePhone} inputMode="tel" className="input" placeholder="98XXXXXXXX" aria-invalid={inv("nomineePhone")} />
+            <input id="nomineePhone" name="nomineePhone" type="tel" defaultValue={v.nomineePhone} inputMode="tel" onInput={phoneOnly} className="input" placeholder="98XXXXXXXX" aria-invalid={inv("nomineePhone")} />
           </Field>
           <Field name="nomineeAadhaar" label={t("f.aadhaar")} error={err("nomineeAadhaar")} className="sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
             <AadhaarInput name="nomineeAadhaar" defaultValue={v.nomineeAadhaar} invalid={inv("nomineeAadhaar")} />
@@ -316,7 +330,7 @@ export function ApplicationForm({
 
       <Section n={n(4)} title={t("sec.shares")}>
         <Field name="shares" label={t("f.shares")} error={err("shares")} className="max-w-xs">
-          <input id="shares" name="shares" defaultValue={v.shares || "1"} inputMode="numeric" className="input" aria-invalid={inv("shares")} />
+          <input id="shares" name="shares" defaultValue={v.shares || "1"} inputMode="numeric" pattern="[0-9]*" onInput={sharesOnly} className="input" aria-invalid={inv("shares")} />
         </Field>
       </Section>
 
