@@ -10,7 +10,7 @@
     {
       "name": "coopsoc-dev-localdb",
       "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "set MONGODB_URI=mongodb://127.0.0.1:27017&& npm run dev"],
+      "runtimeArgs": ["/c", "set MONGODB_URI=mongodb://127.0.0.1:27017&& set ADMIN_EMAILS=admin@coopsoc.test&& set SUPER_ADMIN_EMAILS=admin@coopsoc.test&& npm run dev"],
       "port": 3000
     }
   ]
