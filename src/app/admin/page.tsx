@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PAGE_SIZE, Pager, pageInfo } from "@/components/pager";
 import { StatusBadge } from "@/components/status-badge";
 import { connectDB } from "@/lib/db";
 import { fileUrl } from "@/lib/files";
@@ -15,39 +16,44 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string; page?: string }> }) {
   const admin = await requireAdmin();
   const [sp, { t }] = await Promise.all([searchParams, getT()]);
-  const status = (STATUSES as readonly string[]).includes(sp.status ?? "") ? (sp.status as Status) : undefined;
   const q = (sp.q ?? "").trim().slice(0, 60);
+  // With no tab picked, open on "Submitted" — the office's to-do list. A search with no tab looks through everything.
+  const status: Status | "all" =
+    sp.status === "all" ? "all" : (STATUSES as readonly string[]).includes(sp.status ?? "") ? (sp.status as Status) : q ? "all" : "submitted";
 
   await connectDB();
   const filter: Record<string, unknown> = {};
-  if (status) filter.status = status;
+  if (status !== "all") filter.status = status;
   if (q) {
     const re = new RegExp(escapeRe(q), "i");
     const or: Record<string, unknown>[] = [{ name: re }, { phone: re }, { applicationNo: re }, { membershipNo: re }];
     if (/^\d{4}$/.test(q)) or.push({ aadhaarLast4: q });
     filter.$or = or;
   }
-  const [apps, counts] = await Promise.all([
-    Application.find(filter, { name: 1, phone: 1, applicationNo: 1, status: 1, submittedAt: 1, aadhaarVerified: 1, payment: 1, files: 1 })
-      .sort({ submittedAt: -1 })
-      .limit(200)
-      .lean(),
+  const [matching, counts, pendingContributions] = await Promise.all([
+    Application.countDocuments(filter),
     Application.aggregate<{ _id: Status; n: number }>([{ $group: { _id: "$status", n: { $sum: 1 } } }]),
+    Contribution.countDocuments({ status: "pending" }),
   ]);
+  const { page, pages, skip } = pageInfo(sp.page, matching);
+  const apps = await Application.find(filter, { name: 1, phone: 1, applicationNo: 1, status: 1, submittedAt: 1, aadhaarVerified: 1, payment: 1, files: 1 })
+    .sort({ submittedAt: -1, _id: -1 })
+    .skip(skip)
+    .limit(PAGE_SIZE)
+    .lean();
   const count = Object.fromEntries(counts.map((c) => [c._id, c.n])) as Record<Status, number>;
-  const pendingContributions = await Contribution.countDocuments({ status: "pending" });
   const total = counts.reduce((a, c) => a + c.n, 0);
 
-  const tabHref = (s?: string) => {
-    const p = new URLSearchParams();
-    if (s) p.set("status", s);
+  const listHref = (s: Status | "all", pg = 1) => {
+    const p = new URLSearchParams({ status: s });
     if (q) p.set("q", q);
-    const str = p.toString();
-    return str ? `/admin?${str}` : "/admin";
+    if (pg > 1) p.set("page", String(pg));
+    return `/admin?${p}`;
   };
+  const tabHref = (s: Status | "all") => listHref(s);
   const tabCls = (active: boolean) => `chip shrink-0 border px-3.5 py-1.5 ${active ? "border-ink bg-ink text-white" : "border-sand-2 bg-paper text-ink"}`;
 
   return (
@@ -58,7 +64,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <p className="text-muted">{t("admin.total", { n: total })}</p>
         </div>
         <form className="flex w-full gap-2 sm:w-auto" action="/admin">
-          {status && <input type="hidden" name="status" value={status} />}
+          {sp.status && <input type="hidden" name="status" value={status} />}
           <input name="q" defaultValue={q} placeholder={t("admin.searchPh")} className="input min-w-0 flex-1 sm:w-72" type="search" />
           <button className="btn btn-ghost shrink-0">{t("admin.search")}</button>
         </form>
@@ -77,7 +83,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </div>
 
       <nav className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-        <Link href={tabHref()} className={tabCls(!status)}>
+        <Link href={tabHref("all")} className={tabCls(status === "all")}>
           {t("admin.all")} · {total}
         </Link>
         {STATUSES.map((s) => (
@@ -117,6 +123,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           })}
         </ul>
       )}
+      <Pager page={page} pages={pages} total={matching} href={(p) => listHref(status, p)} t={t} />
     </div>
   );
 }

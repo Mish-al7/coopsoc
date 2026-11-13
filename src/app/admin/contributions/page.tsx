@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ContributionBadge, formatDateTime, rupees, SlipThumb } from "@/components/contribution-bits";
 import { ContributionReview } from "@/components/contribution-review";
+import { PAGE_SIZE, Pager, pageInfo } from "@/components/pager";
 import { connectDB } from "@/lib/db";
 import { getT } from "@/lib/i18n-server";
 import { Application, Contribution, CONTRIBUTION_STATUSES, type ContributionStatus } from "@/lib/models";
@@ -13,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("pc.adminTitle") };
 }
 
-export default async function AdminContributionsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
+export default async function AdminContributionsPage({ searchParams }: { searchParams: Promise<{ status?: string; page?: string }> }) {
   await requireAdmin();
   const [sp, { t, lang }] = await Promise.all([searchParams, getT()]);
   // Pending first by default — that's the office's to-do list.
@@ -21,10 +22,14 @@ export default async function AdminContributionsPage({ searchParams }: { searchP
     sp.status === "all" ? "all" : (CONTRIBUTION_STATUSES as readonly string[]).includes(sp.status ?? "") ? (sp.status as ContributionStatus) : "pending";
 
   await connectDB();
-  const [items, counts] = await Promise.all([
-    Contribution.find(status === "all" ? {} : { status }).sort({ createdAt: -1 }).limit(300).lean(),
-    Contribution.aggregate<{ _id: ContributionStatus; n: number; sum: number }>([{ $group: { _id: "$status", n: { $sum: 1 }, sum: { $sum: "$amount" } } }]),
+  const filter = status === "all" ? {} : { status };
+  const counts = await Contribution.aggregate<{ _id: ContributionStatus; n: number; sum: number }>([
+    { $group: { _id: "$status", n: { $sum: 1 }, sum: { $sum: "$amount" } } },
   ]);
+  const matching = status === "all" ? counts.reduce((a, c) => a + c.n, 0) : (counts.find((c) => c._id === status)?.n ?? 0);
+  const { page, pages, skip } = pageInfo(sp.page, matching);
+  const items = await Contribution.find(filter).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(PAGE_SIZE).lean();
+  const listHref = (pg: number) => `/admin/contributions?status=${status}${pg > 1 ? `&page=${pg}` : ""}`;
   const apps = await Application.find({ _id: { $in: items.map((c) => c.application) } }, { name: 1, membershipNo: 1, phone: 1 }).lean();
   const appById = new Map(apps.map((a) => [String(a._id), a]));
   const count = Object.fromEntries(counts.map((c) => [c._id, c])) as Partial<Record<ContributionStatus, { n: number; sum: number }>>;
@@ -114,6 +119,7 @@ export default async function AdminContributionsPage({ searchParams }: { searchP
           })}
         </ul>
       )}
+      <Pager page={page} pages={pages} total={matching} href={listHref} t={t} />
     </div>
   );
 }
