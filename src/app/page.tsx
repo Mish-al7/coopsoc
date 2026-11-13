@@ -34,16 +34,14 @@ export default async function Home() {
 
         <div className="container-x relative grid items-center gap-10 pb-16 pt-10 sm:pt-14 lg:grid-cols-[1.15fr_1fr] lg:pb-24 lg:pt-20">
           <div>
-            <span className="chip bg-white/15 text-white ring-1 ring-white/30">
-              <span className="h-1.5 w-1.5 rounded-full bg-current" /> {t("home.badge")}
-            </span>
-            <h1 className="mt-4 text-[2rem] font-extrabold leading-[1.25] sm:text-5xl sm:leading-[1.18]">
+            <h1 className="text-[2rem] font-extrabold leading-[1.25] sm:text-5xl sm:leading-[1.18]">
               {t("home.h1a")}
               <br />
               <span className="text-[#ffe2b8]">{t("home.h1b")}</span>
             </h1>
             <p className="mt-4 max-w-xl text-lg text-white/90">
-              <span className="font-bold text-white">{t("society.name")}</span> — {t("home.lead")}
+              <span className="block font-bold text-white">{t("society.name")}</span>
+              {t("home.lead")}
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link href={cta} className="btn btn-white text-lg">
@@ -85,6 +83,20 @@ export default async function Home() {
         <svg className="relative block h-8 w-full text-white sm:h-12" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true">
           <path fill="currentColor" d="M0 60V30c180 22 360 30 540 18S900 6 1080 8s270 18 360 28v24z" />
         </svg>
+      </section>
+
+      {/* Thrissur crafts illustration (public/crafts.svg). Phones crop to the centre: lamp, nettipattam, elephant. */}
+      <section className="bg-white pt-2">
+        <div className="container-x">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/crafts.svg"
+            alt={t("home.craftsAlt")}
+            width={1200}
+            height={420}
+            className="h-56 w-full rounded-3xl object-cover shadow-[0_18px_40px_-24px_rgb(14_49_76/0.35)] ring-1 ring-sand sm:h-auto"
+          />
+        </div>
       </section>
 
       {/* How to apply — centred title + divider + icon bubbles, as on thwics.com */}

@@ -56,10 +56,10 @@ const ml = {
   "err.loginFailed": "ഇമെയിൽ അല്ലെങ്കിൽ പാസ്‌വേഡ് തെറ്റാണ്",
 
   // Home
-  "home.badge": "ഓൺലൈൻ അംഗത്വ അപേക്ഷ",
   "home.h1a": "സംഘത്തിൽ അംഗമാകാം,",
   "home.h1b": "ഇനി ഫോണിൽ നിന്ന് തന്നെ.",
   "home.lead": "അംഗത്വത്തിനുള്ള അപേക്ഷ ഓൺലൈനായി സമർപ്പിക്കാം, സ്റ്റാറ്റസ് എപ്പോൾ വേണമെങ്കിലും നോക്കാം.",
+  "home.craftsAlt": "തൃശ്ശൂരിന്റെ കരകൗശലങ്ങൾ: ചൂരൽ കൊട്ട, നിലവിളക്ക്, നെറ്റിപ്പട്ടം, മരത്തിൽ കൊത്തിയ ആന, മൺകുടം",
   "home.ctaApply": "ഇപ്പോൾ അപേക്ഷിക്കുക →",
   "home.ctaMine": "എന്റെ അപേക്ഷയിലേക്ക് →",
   "home.needsTitle": "അപേക്ഷിക്കാൻ വേണ്ടവ",
@@ -444,10 +444,10 @@ const en: Record<Key, string> = {
   "err.loginRequired": "Enter your email and password",
   "err.loginFailed": "Wrong email or password",
 
-  "home.badge": "Online membership application",
   "home.h1a": "Become a member,",
   "home.h1b": "right from your phone.",
   "home.lead": "Submit your membership application online and check its status any time.",
+  "home.craftsAlt": "Thrissur handicrafts: a cane basket, a bell-metal lamp, a nettipattam, a carved wooden elephant and a clay pot",
   "home.ctaApply": "Apply now →",
   "home.ctaMine": "Go to my application →",
   "home.needsTitle": "Keep these ready",
