@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LatestUpdates } from "@/components/latest-updates";
 import { StatusBadge } from "@/components/status-badge";
 import { connectDB } from "@/lib/db";
 import { fileUrl } from "@/lib/files";
@@ -30,6 +31,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     return (
       <div className="container-x max-w-2xl py-8 sm:py-14">
         <h1 className="text-2xl font-bold sm:text-3xl">{t("dash.hello", { name: user.name })}</h1>
+        <LatestUpdates seenAt={user.updatesSeenAt} t={t} lang={lang} />
         <div className="card mt-6 p-6 text-center sm:p-10">
           <p className="font-display text-xl font-semibold">{t("dash.noneTitle")}</p>
           <p className="mt-2 text-muted">{t("dash.noneText")}</p>
@@ -56,6 +58,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <h1 className="text-2xl font-bold sm:text-3xl">{t("dash.hello", { name: user.name })}</h1>
 
       {saved && <p className="alert alert-ok mt-4">{t("dash.saved")}</p>}
+
+      <LatestUpdates seenAt={user.updatesSeenAt} t={t} lang={lang} />
 
       <div className="card mt-6 overflow-hidden">
         <div className="flex items-start gap-4 p-5 sm:p-6">

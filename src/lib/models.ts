@@ -7,6 +7,7 @@ const userSchema = new Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ["member", "admin"], default: "member" },
+    updatesSeenAt: Date, // last time the member opened the Updates page (for the "new" badge)
   },
   { timestamps: true },
 );
@@ -155,6 +156,25 @@ export type ContributionDoc = InferSchemaType<typeof contributionSchema> & {
 };
 export const Contribution =
   (models.Contribution as Model<ContributionDoc>) || model<ContributionDoc>("Contribution", contributionSchema);
+
+// News / notices the office posts for members (title, optional text and photo).
+const updateSchema = new Schema(
+  {
+    title: { type: String, required: true, trim: true },
+    body: { type: String, trim: true },
+    photo: fileSchema,
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+  },
+  { timestamps: true },
+);
+updateSchema.index({ createdAt: -1 });
+
+export type UpdateDoc = InferSchemaType<typeof updateSchema> & {
+  _id: mongoose.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+};
+export const Update = (models.Update as Model<UpdateDoc>) || model<UpdateDoc>("Update", updateSchema);
 
 export type SettingsDoc =InferSchemaType<typeof settingsSchema> & { _id: string; updatedAt?: Date };
 export const Settings =

@@ -44,7 +44,15 @@ async function sessionUserId(): Promise<string | null> {
 }
 
 /** `superAdmin` = an office admin who may also change site settings (fee, payment QR). */
-export type CurrentUser = { id: string; name: string; email: string; role: "member" | "admin"; superAdmin: boolean };
+export type CurrentUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "member" | "admin";
+  superAdmin: boolean;
+  /** When the member last opened /updates (null = never). */
+  updatesSeenAt: Date | null;
+};
 
 /** Reads the logged-in user from the database (role is always fresh). */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -54,7 +62,14 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const u = await User.findById(id).lean();
   if (!u) return null;
   const role = u.role as CurrentUser["role"];
-  return { id: String(u._id), name: u.name, email: u.email, role, superAdmin: role === "admin" && isSuperAdminEmail(u.email) };
+  return {
+    id: String(u._id),
+    name: u.name,
+    email: u.email,
+    role,
+    superAdmin: role === "admin" && isSuperAdminEmail(u.email),
+    updatesSeenAt: u.updatesSeenAt ?? null,
+  };
 }
 
 export async function requireUser(): Promise<CurrentUser> {

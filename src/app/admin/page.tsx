@@ -75,6 +75,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           ₹ {t("admin.contributions")}
           {pendingContributions > 0 && <span className="chip bg-brand text-white">{pendingContributions}</span>}
         </Link>
+        <Link href="/admin/updates" className="btn btn-ghost btn-sm">
+          📢 {t("nav.updates")}
+        </Link>
         {admin.superAdmin && (
           <Link href="/admin/settings" className="btn btn-ghost btn-sm">
             ⚙ {t("nav.settings")}

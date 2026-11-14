@@ -1,13 +1,40 @@
 import Link from "next/link";
 import { Emblem } from "./emblem";
 import { LangSwitch } from "./lang";
+import { NavDrawer, type NavItem } from "./nav-drawer";
 import { SOCIETY } from "@/lib/society";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, type CurrentUser } from "@/lib/session";
 import { getT } from "@/lib/i18n-server";
-import { logout } from "@/app/actions/auth";
+import type { TFn } from "@/lib/i18n";
+import { connectDB } from "@/lib/db";
+import { Application, Contribution, Update } from "@/lib/models";
+
+/** Pages in the side menu. Add new features here. */
+async function menuItems(user: CurrentUser, t: TFn): Promise<NavItem[]> {
+  await connectDB();
+  if (user.role === "admin") {
+    const pending = await Contribution.countDocuments({ status: "pending" });
+    return [
+      { href: "/admin", label: t("admin.title"), icon: "list" },
+      { href: "/admin/contributions", label: t("admin.contributions"), icon: "rupee", badge: pending },
+      { href: "/admin/updates", label: t("nav.updates"), icon: "bell" },
+      ...(user.superAdmin ? [{ href: "/admin/settings", label: t("nav.settings"), icon: "gear" } as const] : []),
+    ];
+  }
+  const [app, unread] = await Promise.all([
+    Application.findOne({ user: user.id }, { status: 1 }).lean(),
+    Update.countDocuments(user.updatesSeenAt ? { createdAt: { $gt: user.updatesSeenAt } } : {}),
+  ]);
+  return [
+    { href: "/dashboard", label: t("nav.myApp"), icon: "user" },
+    { href: "/updates", label: t("nav.updates"), icon: "bell", badge: unread },
+    ...(app?.status === "approved" ? [{ href: "/contributions", label: t("pc.title"), icon: "rupee" } as const] : []),
+  ];
+}
 
 export async function SiteHeader() {
   const [user, { t }] = await Promise.all([getCurrentUser().catch(() => null), getT()]);
+  const items = user ? await menuItems(user, t).catch(() => []) : [];
 
   return (
     <header className="no-print sticky top-0 z-30 border-b border-sand bg-white/90 backdrop-blur-md">
@@ -26,19 +53,7 @@ export async function SiteHeader() {
         <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <LangSwitch />
           {user ? (
-            <>
-              <Link href={user.role === "admin" ? "/admin" : "/dashboard"} className="btn btn-ghost btn-sm">
-                {user.role === "admin" ? t("nav.office") : t("nav.myApp")}
-              </Link>
-              <form action={logout}>
-                <button className="btn btn-sm px-2 text-muted hover:text-brand-dark" title={t("nav.logout")} aria-label={t("nav.logout")}>
-                  <span className="hidden md:inline">{t("nav.logout")}</span>
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 md:hidden" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                  </svg>
-                </button>
-              </form>
-            </>
+            <NavDrawer items={items} name={user.name} email={user.email} />
           ) : (
             <>
               <Link href="/login" className="btn btn-ghost btn-sm">
