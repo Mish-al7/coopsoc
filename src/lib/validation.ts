@@ -143,4 +143,6 @@ export const FILE_SLOTS = [
   "nomineeAadhaarBack",
 ] as const;
 export type FileSlot = (typeof FILE_SLOTS)[number];
+/** Photos of the applicant and nominee may be left out; signature and Aadhaar images are required. */
+export const OPTIONAL_SLOTS: ReadonlySet<FileSlot> = new Set(["photo", "nomineePhoto"]);
 export const MAX_EXTRA = 3;

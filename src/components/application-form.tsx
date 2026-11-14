@@ -5,7 +5,7 @@ import { submitApplication } from "@/app/actions/application";
 import { cleanAadhaar, formatAadhaar, isValidAadhaar } from "@/lib/aadhaar";
 import { NOMINEE_RELATIONS } from "@/lib/i18n";
 import { GUARDIAN_RELATIONS } from "@/lib/society";
-import { allErrors, applicationSchema, FILE_SLOTS, formText, IFSC_RE, MAX_EXTRA, type FileSlot } from "@/lib/validation";
+import { allErrors, applicationSchema, FILE_SLOTS, formText, IFSC_RE, MAX_EXTRA, OPTIONAL_SLOTS, type FileSlot } from "@/lib/validation";
 import { ExtraPhotos, ImagePicker } from "./image-picker";
 import { useT } from "./lang";
 import { PaymentBox, type PaymentInfo } from "./payment-box";
@@ -190,7 +190,7 @@ export function ApplicationForm({
     const raw = formText(fd);
     const parsed = applicationSchema.safeParse(raw);
     const ce = allErrors(raw, parsed.success ? undefined : parsed.error);
-    for (const slot of FILE_SLOTS) if (!files[slot] && !defaults.files[slot]) ce[slot] = "v.photoRequired";
+    for (const slot of FILE_SLOTS) if (!files[slot] && !defaults.files[slot] && !OPTIONAL_SLOTS.has(slot)) ce[slot] = "v.photoRequired";
     if (payment && !files.payment && !defaults.files.payment) ce.payment = "v.paymentRequired";
     if (!PAYMENT_REF_RE.test(String(fd.get("paymentRef") ?? "").trim())) ce.paymentRef = "v.paymentRef";
 
@@ -446,7 +446,7 @@ export function ApplicationForm({
         <div className="mt-6 border-t border-sand pt-4">
           <p className="mb-3 font-bold">{t("f.nomineeDocs")}</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5">
-            <ImagePicker id="nomineePhoto" label={t("f.photo")} shape="portrait" file={files.nomineePhoto ?? null} existingUrl={defaults.files.nomineePhoto} onChange={setFile("nomineePhoto")} error={err("nomineePhoto")} />
+            <ImagePicker id="nomineePhoto" label={t("f.photo")} hint={t("f.optional")} shape="portrait" file={files.nomineePhoto ?? null} existingUrl={defaults.files.nomineePhoto} onChange={setFile("nomineePhoto")} error={err("nomineePhoto")} />
             <ImagePicker id="nomineeAadhaarFront" label={t("f.aadhaarFront")} file={files.nomineeAadhaarFront ?? null} existingUrl={defaults.files.nomineeAadhaarFront} onChange={setFile("nomineeAadhaarFront")} error={err("nomineeAadhaarFront")} />
             <ImagePicker id="nomineeAadhaarBack" label={t("f.aadhaarBack")} file={files.nomineeAadhaarBack ?? null} existingUrl={defaults.files.nomineeAadhaarBack} onChange={setFile("nomineeAadhaarBack")} error={err("nomineeAadhaarBack")} />
           </div>
@@ -461,7 +461,7 @@ export function ApplicationForm({
 
       <Section n={n(6)} title={t("sec.docs")}>
         <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-          <ImagePicker id="photo" label={t("f.photo")} shape="portrait" file={files.photo ?? null} existingUrl={defaults.files.photo} onChange={setFile("photo")} error={err("photo")} />
+          <ImagePicker id="photo" label={t("f.photo")} hint={t("f.optional")} shape="portrait" file={files.photo ?? null} existingUrl={defaults.files.photo} onChange={setFile("photo")} error={err("photo")} />
           <ImagePicker id="signature" label={t("f.signature")} shape="portrait" hint={t("f.signatureHint")} file={files.signature ?? null} existingUrl={defaults.files.signature} onChange={setFile("signature")} error={err("signature")} />
           <ImagePicker id="aadhaarFront" label={t("f.aadhaarFront")} file={files.aadhaarFront ?? null} existingUrl={defaults.files.aadhaarFront} onChange={setFile("aadhaarFront")} error={err("aadhaarFront")} />
           <ImagePicker id="aadhaarBack" label={t("f.aadhaarBack")} file={files.aadhaarBack ?? null} existingUrl={defaults.files.aadhaarBack} onChange={setFile("aadhaarBack")} error={err("aadhaarBack")} />

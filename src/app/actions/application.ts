@@ -7,7 +7,7 @@ import { Application, nextSeq, type StoredFile } from "@/lib/models";
 import { requireUser } from "@/lib/session";
 import { decrypt, encrypt, hashAadhaar } from "@/lib/crypto";
 import { deleteImage, isRealImage, saveImage } from "@/lib/storage";
-import { allErrors, applicationSchema, FILE_SLOTS, formText, MAX_EXTRA, type FileSlot } from "@/lib/validation";
+import { allErrors, applicationSchema, FILE_SLOTS, formText, MAX_EXTRA, OPTIONAL_SLOTS, type FileSlot } from "@/lib/validation";
 import { SOCIETY } from "@/lib/society";
 import { getSettings } from "@/lib/settings";
 
@@ -38,7 +38,7 @@ export async function submitApplication(_: FormState, fd: FormData): Promise<For
     if (isRealImage(f)) {
       if (!f.type.startsWith("image/")) errors[slot] = "v.imageOnly";
       else incoming[slot] = f;
-    } else if (!existing?.files?.[slot]) {
+    } else if (!existing?.files?.[slot] && !OPTIONAL_SLOTS.has(slot)) {
       errors[slot] = "v.photoRequired";
     }
   }

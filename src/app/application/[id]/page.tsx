@@ -77,8 +77,13 @@ export default async function ApplicationView({ params }: { params: Promise<{ id
               {t("dash.appNo")}: <b className="text-ink">{app.applicationNo}</b>
             </p>
           </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {photo && <img src={photo} alt={t("f.photo")} className="h-36 w-28 rounded-md border border-ink/40 object-cover" />}
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo} alt={t("f.photo")} className="h-36 w-28 rounded-md border border-ink/40 object-cover" />
+          ) : (
+            // The photo is optional — leave a box on the printout to paste one in.
+            <div className="flex h-36 w-28 items-center justify-center rounded-md border-2 border-dashed border-ink/40 text-sm text-muted">{t("f.photo")}</div>
+          )}
         </div>
 
         <dl>
